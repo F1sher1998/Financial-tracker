@@ -8,16 +8,11 @@ export const pool = new Pool({
   password: "159753789",
   port: 5432,
   idleTimeoutMillis: 30000,
+  allowExitOnIdle: true,
 });
 
-pool
-  .connect()
-  .then(() => {
-    console.log(`Connected to the database successfully`);
-  })
-  .catch((err) => {
-    console.error(`Database connection error:`, err.stack);
-  });
-
-const result = await pool.query("SELECT NOW()");
-console.log(result.rows[0]);
+export async function healthcheck(): Promise<void> {
+  const r = await pool.query("SELECT NOW()");
+  console.log("DB time:", r.rows[0].now);
+  await pool.end();
+}
