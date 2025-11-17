@@ -1,0 +1,45 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    /* Platform */
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "NodeNext", // ESM in Node 18+
+    "moduleResolution": "NodeNext",
+    "resolveJsonModule": true,
+    "types": [],
+
+    /* Project structure */
+    "rootDir": "",
+    "baseUrl": ".",
+    "paths": { "@/*": ["/*"] },
+
+    /* Emit */
+    "newLine": "lf",
+    "stripInternal": true,
+    "importsNotUsedAsValues": "remove",
+
+    /* Interop */
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+
+    /* Strictness */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "exactOptionalPropertyTypes": true,
+    "useUnknownInCatchVariables": true,
+    "noUncheckedIndexedAccess": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+
+    /* Performance */
+    "skipLibCheck": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./node_modules/.tsbuildinfo"
+  }
+}

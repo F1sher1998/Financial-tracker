@@ -1,0 +1,32 @@
+{
+  "name": "noblefi",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "db:test": "node --watch db.ts",
+    "local:test": "node --watch server.ts"
+  },
+  "author": "Ivan Protsyk",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.5",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/pg": "^8.15.6",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.16.3",
+    "ts-node": "^10.9.2"
+  },
+  "dependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "zod": "^4.1.12"
+  }
+}
