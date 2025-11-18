@@ -2,10 +2,11 @@
 import { Router } from "express";
 
 // custom imports
-import { registerUser } from "./controllers/user-controller.ts";
+import { registerUser, loginUser } from "./controllers/user-controller.ts";
 
 const router = Router();
 
 router.route("/user/register").post(registerUser);
+router.route("/user/login").post(loginUser);
 
 export default router;

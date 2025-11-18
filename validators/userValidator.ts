@@ -9,7 +9,7 @@ export const UserRegister = z.object({
 export type UserRegisterInput = z.infer<typeof UserRegister>;
 
 export const UserLogin = z.object({
-  emai: z.string().email(),
+  email: z.string().email(),
   password: z.string(),
 });
 

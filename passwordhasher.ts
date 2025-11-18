@@ -6,4 +6,20 @@ export const hashPassword = async (password: string): Promise<string> => {
   return hashed;
 };
 
-hashPassword("foahbgoaewboigieba");
+export const verifyPassword = async (
+  password: string,
+  hashedPassword: string,
+): Promise<boolean> => {
+  const verify = await bcrypt.compare(password, hashedPassword);
+  if (verify !== true) {
+    return false;
+  }
+  return true;
+};
+
+//hashPassword("159753789");
+//
+verifyPassword(
+  "159753789",
+  "$2b$10$ycd5KtmrOds.r9EMiXDO0uJwFZ5Zwret72ZzmR9ifYmiZ.jE2WDFG",
+);

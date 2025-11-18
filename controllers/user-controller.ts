@@ -1,11 +1,15 @@
 import { pool } from "../db.ts";
+import jwt from "jsonwebtoken";
 import type { Request, Response } from "express";
 import {
   UserRegister,
   type UserRegisterInput,
+  UserLogin,
+  type UserLoginInput,
 } from "../validators/userValidator.ts";
+import { SignToken } from "../jwtGenerator.ts";
 
-import { hashPassword } from "../passwordhasher.ts";
+import { hashPassword, verifyPassword } from "../passwordhasher.ts";
 
 // USER REGISTER ROUTE
 export const registerUser = async (
@@ -70,4 +74,80 @@ export const registerUser = async (
   }
 };
 
-export const functionName = async (): Promise<void> => {};
+// USER LOGIN ROUTE
+export const loginUser = async (
+  req: Request,
+  res: Response,
+): Promise<Response> => {
+  const client = await pool.connect();
+
+  const parsed = UserLogin.safeParse(req.body);
+
+  // IF PARSED DATA IS NOT VALID THROW AN ERROR
+  if (!parsed.success) {
+    // Why: safe narrowing makes `parsed.data` non-optional below.
+    return res
+      .status(400)
+      .json({ message: "bad request", errors: parsed.error.flatten() });
+  }
+
+  const data: UserLoginInput = parsed.data;
+
+  const password = data.password;
+  const email = data.email;
+
+  try {
+    const userData = await client.query(
+      "SELECT id, password FROM users WHERE email = $1 ",
+      [email],
+    );
+
+    if (!userData)
+      return res
+        .status(400)
+        .json({ message: "Failed to find a user", status: "bad" });
+
+    const userPassword = userData.rows[0].password;
+
+    const verified = await verifyPassword(password, userPassword);
+    if (!verified)
+      return res
+        .status(400)
+        .json({ message: "Failed to verify the password", status: "bad" });
+
+    const id = userData.rows[0].id;
+
+    const accessToken = await SignToken(
+      { id: id, email: email },
+      process.env.JWT_SECRET_ACCESS!,
+      { expiresIn: "15m" },
+    );
+    const refreshToken = await SignToken(
+      { id: id, email: email },
+      process.env.JWT_SECRET_REFRESH!,
+      { expiresIn: "1d" },
+    );
+    console.log(refreshToken);
+
+    await client.query("BEGIN TRANSACTION");
+
+    await client.query("UPDATE users SET token = $1 WHERE id = $2", [
+      refreshToken,
+      id,
+    ]);
+
+    await client.query("COMMIT TRANSACTION");
+
+    return res
+      .status(200)
+      .json({ message: "Successfull logged in a user", status: "good" });
+  } catch (error) {
+    const transactionError = error;
+    try {
+      await client.query("ROLLBACK TRANSACTION");
+    } catch {}
+    throw transactionError;
+  } finally {
+    client.release();
+  }
+};
