@@ -8,10 +8,9 @@ export const UserRegister = z.object({
 
 export type UserRegisterInput = z.infer<typeof UserRegister>;
 
-const user = UserRegister.parse({
-  username: "user_01",
-  password: "159753789",
-  email: "user01@test.com",
+export const UserLogin = z.object({
+  emai: z.string().email(),
+  password: z.string(),
 });
 
-console.log(user);
+export type UserLoginInput = z.infer<typeof UserLogin>;
