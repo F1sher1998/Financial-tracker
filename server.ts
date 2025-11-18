@@ -3,12 +3,15 @@ import express from "express";
 import dotenv from "dotenv";
 const app = express();
 
+import router from "./router.ts";
+
 dotenv.config();
-app.use(cors());
 app.use(express.json());
+app.use("/app/v1", router);
+app.use(cors());
 
 app
-  .listen(8000, () => {
+  .listen(2000, () => {
     console.log(`erver is running on http://localhost:${process.env.PORT}`);
   })
   .on("error", (error) => {

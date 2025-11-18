@@ -1,23 +1,33 @@
 import { pool } from "../db.ts";
-import { Request, Response } from "express";
-import { UserRegister } from "../validators/userValidator.ts";
+import type { Request, Response } from "express";
+import {
+  UserRegister,
+  type UserRegisterInput,
+} from "../validators/userValidator.ts";
 
 export const registerUser = async (
   req: Request,
   res: Response,
 ): Promise<Response> => {
   const client = await pool.connect();
-  const safeData = UserRegister.parse(req.body);
-  if (!safeData) {
-    return res.status(400).json({ message: "fail", status: "bad" });
+  const parsed = UserRegister.safeParse(req.body);
+
+  if (!parsed.success) {
+    // Why: safe narrowing makes `parsed.data` non-optional below.
+    return res
+      .status(400)
+      .json({ message: "bad request", errors: parsed.error.flatten() });
   }
 
+  const data: UserRegisterInput = parsed.data;
+
   try {
+    console.log("Reached transaction");
     await client.query("BEGIN TRANSACTION");
 
     const userData = await client.query(
-      "INSERT INTO user (username, email, password) VALUES($1, $2, $3) RETURNING id, email",
-      [safeData.username, safeData.email, safeData.password],
+      "INSERT INTO users (username, email, password) VALUES($1, $2, $3) RETURNING id, email",
+      [data.username, data.email, data.password],
     );
 
     await client.query("COMMIT TRANSACTION");
