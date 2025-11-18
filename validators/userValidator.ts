@@ -14,3 +14,9 @@ export const UserLogin = z.object({
 });
 
 export type UserLoginInput = z.infer<typeof UserLogin>;
+
+export const UserSalary = z.object({
+  amount: z.number(),
+});
+
+export type UserSalaryInput = z.infer<typeof UserSalary>;

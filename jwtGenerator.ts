@@ -1,16 +1,16 @@
 import jwt from "jsonwebtoken";
-import type { SignOptions } from "jsonwebtoken";
+import type { SignOptions, JwtPayload, VerifyOptions } from "jsonwebtoken";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-interface JwtPayload {
+interface AppJwtPayload extends JwtPayload {
   id: number;
   email: string;
 }
 
 export const SignToken = async (
-  payload: JwtPayload,
+  payload: AppJwtPayload,
   secret: string | Buffer,
   options?: SignOptions,
 ): Promise<string> => {
@@ -21,3 +21,12 @@ export const SignToken = async (
   console.log(token);
   return token.toString();
 };
+
+export function VerifyToken<T extends JwtPayload = AppJwtPayload>(
+  token: string,
+  secret: string | Buffer,
+  options?: VerifyOptions,
+): T {
+  const decoded = jwt.verify(token, secret, options) as string | JwtPayload;
+  return decoded as T;
+}

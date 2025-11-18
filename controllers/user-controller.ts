@@ -1,6 +1,5 @@
 import { pool } from "../db.ts";
-import jwt from "jsonwebtoken";
-import type { Request, Response } from "express";
+import { type Request, type Response } from "express";
 import {
   UserRegister,
   type UserRegisterInput,
@@ -122,6 +121,12 @@ export const loginUser = async (
       process.env.JWT_SECRET_ACCESS!,
       { expiresIn: "15m" },
     );
+
+    res.cookie("accessToken", accessToken, {
+      maxAge: 15 * 60 * 1000,
+      secure: true,
+    });
+
     const refreshToken = await SignToken(
       { id: id, email: email },
       process.env.JWT_SECRET_REFRESH!,
