@@ -1,14 +1,17 @@
 import { pool } from "../db.ts";
 import { type Request, type Response } from "express";
+
 import {
   UserRegister,
   type UserRegisterInput,
   UserLogin,
   type UserLoginInput,
 } from "../validators/userValidator.ts";
-import { SignToken } from "../jwtGenerator.ts";
 
-import { hashPassword, verifyPassword } from "../passwordhasher.ts";
+import { SignToken, VerifyToken } from "../utils/jwtGenerator.ts";
+import { ValidateRefresh } from "../refresh_token.ts";
+
+import { hashPassword, verifyPassword } from "../utils/passwordhasher.ts";
 
 // USER REGISTER ROUTE
 export const registerUser = async (
@@ -124,7 +127,9 @@ export const loginUser = async (
 
     res.cookie("accessToken", accessToken, {
       maxAge: 15 * 60 * 1000,
+      httpOnly: true,
       secure: true,
+      sameSite: "lax",
     });
 
     const refreshToken = await SignToken(
@@ -132,7 +137,13 @@ export const loginUser = async (
       process.env.JWT_SECRET_REFRESH!,
       { expiresIn: "1d" },
     );
-    console.log(refreshToken);
+
+    res.cookie("refreshToken", refreshToken, {
+      maxAge: 1 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+    });
 
     await client.query("BEGIN TRANSACTION");
 
@@ -154,5 +165,133 @@ export const loginUser = async (
     throw transactionError;
   } finally {
     client.release();
+  }
+};
+
+export const findUserById = async (
+  req: Request,
+  res: Response,
+): Promise<Response> => {
+  const id = req.params.id;
+
+  if (!id)
+    return res
+      .status(400)
+      .json({ message: "Failed to receive user's id", status: "bad" });
+
+  const client_FUBD = await pool.connect();
+
+  try {
+    const token = req.cookies.accessToken;
+
+    if (!token)
+      try {
+        const token = req.cookies.refreshToken;
+
+        const valid = await ValidateRefresh(token);
+
+        const userId = valid.userId;
+        const userEmail = valid.userEmail;
+
+        const accessToken = await SignToken(
+          { id: userId, email: userEmail },
+          process.env.JWT_SECRET_ACCESS!,
+          { expiresIn: "15m" },
+        );
+
+        res.cookie("accessToken", accessToken, {
+          maxAge: 15 * 60 * 1000,
+          httpOnly: true,
+          secure: true,
+          sameSite: "lax",
+        });
+
+        const refreshToken = await SignToken(
+          { id: userId, email: userEmail },
+          process.env.JWT_SECRET_REFRESH!,
+          { expiresIn: "1d" },
+        );
+
+        res.cookie("refreshToken", refreshToken, {
+          maxAge: 1 * 24 * 60 * 60 * 1000,
+          httpOnly: true,
+          secure: true,
+          sameSite: "lax",
+        });
+
+        await client_FUBD.query("UPDATE users SET token = $1 WHERE id = $2", [
+          refreshToken,
+          userId,
+        ]);
+
+        await client_FUBD.query("COMMIT TRANSACTION");
+
+        return res
+          .status(200)
+          .json({ message: "tokens were renewed!", satus: "good" });
+      } catch (error) {
+        const transactionError = error;
+        if (error)
+          try {
+            await client_FUBD.query("ROLLBACK TRANSACTION");
+          } catch {}
+        throw transactionError;
+      } finally {
+        client_FUBD.release();
+      }
+
+    const verified = VerifyToken(token, process.env.JWT_SECRET_ACCESS!);
+
+    const userId = verified.userId;
+
+    if (!verified)
+      return res
+        .status(200)
+        .json({ message: "tokens were renewed!", satus: "good" });
+
+    const user = await client_FUBD.query(
+      "SELECT username, email, created_at FROM users WHERE id = $1",
+      [id],
+    );
+
+    const userSalary = await client_FUBD.query(
+      "SELECT monthly FROM salary WHERE user_id = $1",
+      [id],
+    );
+
+    const userExpenses = await client_FUBD.query(
+      "SELECT * FROM expense WHERE user_id = $1",
+      [id],
+    );
+
+    console.log(user.rows[0].email);
+
+    const expenses = userExpenses.rows;
+
+    const salary = userSalary.rows[0].monthly;
+
+    const username = user.rows[0].username;
+    const email = user.rows[0].email;
+    const created_at = user.rows[0].created_at;
+
+    if (!user)
+      return res
+        .status(400)
+        .json({ message: `Couldn't find user wiht id ${userId}` });
+
+    return res
+      .status(200)
+      .json({
+        username: username,
+        email: email,
+        created_at: created_at,
+        salary: salary,
+        expenses: expenses,
+      });
+  } catch (error) {
+    const transactionError = error;
+    throw transactionError;
+  } finally {
+    client_FUBD.release();
   }
 };

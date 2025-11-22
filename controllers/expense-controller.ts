@@ -1,28 +1,30 @@
 import { type Request, type Response } from "express";
 import { pool } from "../db.ts";
-import { ValidateRefresh } from "../refresh_token.ts";
-import { calcsalaryAsync, type SalaryBreakdown } from "../utils/salarycalk.ts";
 import { SignToken, VerifyToken } from "../utils/jwtGenerator.ts";
-import {
-  UserSalary,
-  type UserSalaryInput,
-} from "../validators/userValidator.ts";
+import { ValidateRefresh } from "../refresh_token.ts";
 
-export const addSalary = async (
+import {
+  ExpenseData,
+  type ExpenseDataInput,
+} from "../validators/expenseValidator.ts";
+
+export const createExpense = async (
   req: Request,
   res: Response,
 ): Promise<Response> => {
-  const parsed = UserSalary.safeParse(req.body);
+  const parsed = ExpenseData.safeParse(req.body);
 
   if (!parsed.success) {
     return res
       .status(400)
-      .json({ message: "failed to validate", status: "bad" });
+      .json({ message: "failed to verify data", status: "bad" });
   }
 
-  const data: UserSalaryInput = parsed.data;
+  const data: ExpenseDataInput = parsed.data;
 
   const client = await pool.connect();
+
+  const amount = data.amount;
 
   try {
     const token = req.cookies.accessToken;
@@ -84,42 +86,39 @@ export const addSalary = async (
 
     const verified = VerifyToken(token, process.env.JWT_SECRET_ACCESS!);
 
-    const userEmail = verified.email;
-    const userId = verified.id;
-
     if (!verified)
       return res
-        .status(400)
-        .json({ message: "did not verify the token", status: "bad" });
+        .status(200)
+        .json({ message: "failed to verify token", satus: "bad" });
+
+    const userId = verified.id;
 
     await client.query("BEGIN TRANSACTION");
 
-    const user = await client.query(
-      "SELECT * FROM users WHERE id = $1 AND email = $2",
-      [userId, userEmail],
+    const salary = await client.query(
+      "SELECT * FROM salary WHERE user_id = $1",
+      [userId],
     );
 
-    const userId_db = user.rows[0].id;
+    const salaryAmount = salary.rows[0].monthly;
 
-    const breakdown: SalaryBreakdown = await calcsalaryAsync(data.amount);
+    const leftover = salaryAmount - amount;
 
-    const yearly = breakdown.year;
-    const quarterly = breakdown.quarter;
-    const monthly = breakdown.month;
-    const weekly = breakdown.week;
-
-    console.log("THIS IS THE AMOUNT: ", yearly);
+    await client.query("UPDATE salary SET leftover = $1 WHERE user_id = $2", [
+      leftover,
+      userId,
+    ]);
 
     await client.query(
-      "INSERT INTO salary (amount, yearly, quarterly, monthly, weekly, user_id) VALUES($1, $2, $3, $4, $5, $6)",
-      [data.amount, yearly, quarterly, monthly, weekly, userId_db],
+      "INSERT INTO expense (category, amount, date, user_id) VALUES($1, $2, $3, $4) RETURNING *",
+      [data.category, data.amount, data.date, userId],
     );
 
     await client.query("COMMIT TRANSACTION");
 
     return res
       .status(201)
-      .json({ messae: "Salary was successfully created", status: "good" });
+      .json({ message: "Expense was created successfully!", status: "good" });
   } catch (error) {
     const transactionError = error;
     if (error)
