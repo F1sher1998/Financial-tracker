@@ -2,7 +2,6 @@ import bcrypt from "bcrypt";
 
 export const hashPassword = async (password: string): Promise<string> => {
   const hashed = await bcrypt.hash(password, 10);
-  console.log(hashed);
   return hashed;
 };
 
@@ -17,9 +16,19 @@ export const verifyPassword = async (
   return true;
 };
 
-//hashPassword("159753789");
-//
-verifyPassword(
-  "159753789",
-  "$2b$10$ycd5KtmrOds.r9EMiXDO0uJwFZ5Zwret72ZzmR9ifYmiZ.jE2WDFG",
-);
+
+
+///////////////////////////////////////////////////////////////////
+
+
+export const hashToken = async (token: string): Promise<string> => {
+  const hashed = await bcrypt.hash(token, 10);
+  return hashed;
+};
+
+
+
+// const password = await hashPassword("159753789");
+// console.log(password)
+const verified = await verifyPassword("159753789", "$2b$10$dXeU5YO.5LyhZV5f/OTeyetCWVdYHJkcxk1dzmAvfuaonm0.zQ1Da");
+console.log(verified)

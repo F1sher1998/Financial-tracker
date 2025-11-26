@@ -14,7 +14,7 @@ app.use(cors());
 
 app
   .listen(2000, () => {
-    console.log(`erver is running on http://localhost:${process.env.PORT}`);
+    console.log(`server is running on http://localhost:${process.env.PORT}`);
   })
   .on("error", (error) => {
     console.error(error);

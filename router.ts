@@ -1,23 +1,21 @@
 // technical imports
 import { Router } from "express";
-
+import { RegisterUser, LoginUser, FindUserById, FindUserItems } from "./controllers/userController.ts";
+import { SalaryInsert, SalaryUpdate } from './controllers/salaryController.ts';
+import { RefreshTokens } from "./services/RefreshToken.ts";
 // custom imports
-import {
-  registerUser,
-  loginUser,
-  findUserById,
-} from "./controllers/user-controller.ts";
-import { addSalary } from "./controllers/salary-controller.ts";
-import { createExpense } from "./controllers/expense-controller.ts";
-import { createSaving } from "./controllers/savings-controller.ts";
+
 
 const router = Router();
 
-router.route("/user/register").post(registerUser);
-router.route("/user/login").post(loginUser);
-router.route("/user/salary/insert").post(addSalary);
-router.route("/user/expense/create").post(createExpense);
-router.route("/user/saving/create").post(createSaving);
-router.route("/user/find/:id").get(findUserById);
+//// User routes
+router.route("/user/register").post(RegisterUser);
+router.route("/user/login").post(LoginUser);
+router.route("/user/find/:id").get(FindUserById, RefreshTokens)
+router.route("/user/find/items/:name").get(FindUserItems, RefreshTokens)
+//// Salary routes
+router.route("/salary/insert").post(SalaryInsert, RefreshTokens)
+router.route("/salary/update").post(SalaryUpdate, RefreshTokens)
+
 
 export default router;

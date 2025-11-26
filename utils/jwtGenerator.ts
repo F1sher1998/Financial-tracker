@@ -18,8 +18,7 @@ export const SignToken = async (
     algorithm: options?.algorithm ?? "HS256",
     ...(options ?? {}),
   });
-  console.log(token);
-  return token.toString();
+  return token;
 };
 
 export function VerifyToken<T extends JwtPayload = AppJwtPayload>(
