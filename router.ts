@@ -2,6 +2,7 @@
 import { Router } from "express";
 import { RegisterUser, LoginUser, FindUserById, FindUserItems } from "./controllers/userController.ts";
 import { SalaryInsert, SalaryUpdate } from './controllers/salaryController.ts';
+import { ExpenseCreate } from './controllers/expenseController.ts'
 import { RefreshTokens } from "./services/RefreshToken.ts";
 // custom imports
 
@@ -16,6 +17,7 @@ router.route("/user/find/items/:name").get(FindUserItems, RefreshTokens)
 //// Salary routes
 router.route("/salary/insert").post(SalaryInsert, RefreshTokens)
 router.route("/salary/update").post(SalaryUpdate, RefreshTokens)
-
+//// Expense routes
+router.route("/expense/create").post(ExpenseCreate, RefreshTokens)
 
 export default router;

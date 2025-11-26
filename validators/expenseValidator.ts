@@ -1,9 +1,9 @@
 import z from "zod";
 
 export const ExpenseData = z.object({
-  category: z.string(),
+  amount: z.number().min(1),
   date: z.string(),
-  amount: z.number(),
+  category: z.string().min(3)
 });
 
 export type ExpenseDataInput = z.infer<typeof ExpenseData>;
